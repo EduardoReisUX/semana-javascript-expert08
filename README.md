@@ -37,15 +37,17 @@ Marque esse projeto com uma estrela 🌟 e acesse o nosso [grupo oficial no What
   - https://github.com/Vanilagy/webm-muxer
   - https://github.com/Vanilagy/mp4-muxer
 
-
-
 ### Links mostrados nos aulas:
-- Reuni todos os links em [referências](./referencias.md)
-### Considerações
-- Tire suas dúvidas sobre os desafios em nossa comunidade, o objetivo é você aprender de forma divertida. Surgiu dúvidas? Pergunte por lá!
 
+- Reuni todos os links em [referências](./referencias.md)
+- 
+### Considerações
+
+- Tire suas dúvidas sobre os desafios em nossa comunidade, o objetivo é você aprender de forma divertida. Surgiu dúvidas? Pergunte por lá!
 - Ao completar qualquer um dos desafios, envie no canal **#desafios** da comunidade no **Discord**
+
 ### FAQ
+
 - browser-sync está lançando erros no Windows e nunca inicializa:
   - Solução: Trocar o browser-sync pelo http-server.
     1. instale o **http-server**  com `npm i -D http-server`
@@ -53,3 +55,20 @@ Marque esse projeto com uma estrela 🌟 e acesse o nosso [grupo oficial no What
     3. agora o projeto vai estar executando na :8080 então vá no navegador e tente acessar o http://localhost:8080/
   A unica coisa, é que o projeto não vai reiniciar quando voce alterar algum código, vai precisar dar um F5 na página toda vez que alterar algo
 
+## Resumo sobre o que está acontecendo
+
+Alguns componentes são importantes para o processamento de vídeos sob demanda: 
+
+- Demux (demultiplexador - fragmenta o arquivo em várias partes), 
+- Mux (multiplexador - junta os fragmentos do arquivos em um só), 
+- Encoder (codificador - faz a compactação do arquivo, transforma em outro código), 
+- Decoder (decodificador - faz a descompactação, "destransforma" o código para arquivo).
+
+O fluxo de operação acontece da seguinte maneira:
+
+1. Baixa um arquivo MP4 sob demanda
+2. Demultiplexa com o MP4Box
+3. Encodifica cada fragmento com o VideoEncoder
+4. Multiplexa cada fragmento
+5. Faz upload dos fragmentos em formato webm (formato aberto e livre de royalties)
+6. Decoda cada fragmento com VideoDecoder
