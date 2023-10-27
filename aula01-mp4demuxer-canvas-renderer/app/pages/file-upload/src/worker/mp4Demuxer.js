@@ -1,4 +1,4 @@
-import { createFile } from "../deps/mp4box.all.min.js";
+import { createFile } from "../deps/mp4box.0.5.2.js";
 
 export default class MP4Demuxer {
   #onConfig;
@@ -27,8 +27,25 @@ export default class MP4Demuxer {
       console.error("deu ruim mp4Demuxer", error);
     };
 
-    this.#init(stream);
+    return this.#init(stream);
   }
 
-  #init(stream) {}
+  /**
+   *
+   * @param {ReadableStream} stream
+   * @returns Promise<void>
+   */
+  #init(stream) {
+    const consumeFile = new WritableStream({
+      /** @param {Uint8Array} chunk */
+      write: (chunk) => {
+        debugger;
+      },
+      close: () => {
+        debugger;
+      },
+    });
+
+    return stream.pipeTo(consumeFile);
+  }
 }
