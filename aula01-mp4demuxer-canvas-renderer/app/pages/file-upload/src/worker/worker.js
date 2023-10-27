@@ -1,6 +1,7 @@
 // https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers
 // Workers fazem o processamento numa thread paralela, sem interferir a interface do usuário.
 
+import MP4Demuxer from "./mp4Demuxer.js";
 import VideoProcessor from "./videoProcessor.js";
 
 // Baixa resolução
@@ -37,15 +38,15 @@ const encoderConfig = {
   // avc: { format: 'annexb' }
 };
 
-const videoProcessor = new VideoProcessor();
+const mp4Demuxer = new MP4Demuxer();
+const videoProcessor = new VideoProcessor({ mp4Demuxer });
 
 onmessage = async ({ data }) => {
   await videoProcessor.start({
     file: data.file,
     encoderConfig,
-  });
-
-  self.postMessage({
-    status: "done",
+    sendMessage(message) {
+      self.postMessage(message);
+    },
   });
 };
