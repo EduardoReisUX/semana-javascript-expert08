@@ -5,6 +5,7 @@ import CanvasRenderer from "./canvasRenderer.js";
 import MP4Demuxer from "./mp4Demuxer.js";
 import VideoProcessor from "./videoProcessor.js";
 import WebMWriter from "./../deps/webm-writer2.js";
+import Service from "./service.js";
 
 // Baixa resolução
 const qvgaConstraints = {
@@ -48,9 +49,13 @@ const webmWriterConfig = {
 };
 
 const mp4Demuxer = new MP4Demuxer();
+const service = new Service({
+  url: "http://localhost:3000",
+});
 const videoProcessor = new VideoProcessor({
   mp4Demuxer,
   webMWriter: new WebMWriter(webmWriterConfig),
+  service,
 });
 
 onmessage = async ({ data }) => {
