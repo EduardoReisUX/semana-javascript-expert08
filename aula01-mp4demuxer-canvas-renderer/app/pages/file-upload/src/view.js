@@ -55,5 +55,16 @@ export default class View {
     this.#fileUpload.addEventListener("change", this.onChange(fn));
   }
 
-  downloadBlobAsFile(buffers, filename) {}
+  downloadBlobAsFile(buffers, filename) {
+    const blob = new Blob(buffers, { type: "video/webm" });
+    const blobUrl = new URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = filename;
+
+    a.click();
+
+    URL.revokeObjectURL(blobUrl);
+  }
 }
