@@ -226,21 +226,26 @@ export default class VideoProcessor {
       .pipeThrough(this.encode144p(encoderConfig)) // Readable e Transformable stream
       .pipeThrough(this.renderDecodedFramesAndGetEncodedChunks(renderFrame))
       .pipeThrough(this.transformIntoWebM())
-      .pipeThrough(
-        new TransformStream({
-          transform: ({ data, position }, controller) => {
-            this.#buffers.push(data);
-            controller.enqueue(data);
-          },
-          flush: () => {
-            sendMessage({
-              status: "done",
-              buffer: this.#buffers,
-              filename: fileName.concat("-144p.webm"),
-            });
-          },
-        })
-      )
+      // Para salvar na máquina, descomente esse trecho
+      // .pipeThrough(
+      //   new TransformStream({
+      //     transform: ({ data, position }, controller) => {
+      //       this.#buffers.push(data);
+      //       controller.enqueue(data);
+      //     },
+      //     flush: () => {
+      //       sendMessage({
+      //         status: "done",
+      //         buffer: this.#buffers,
+      //         filename: fileName.concat("-144p.webm"),
+      //       });
+      //     },
+      //   })
+      // )
       .pipeTo(this.upload(fileName, "144p", "webm"));
+
+    sendMessage({
+      status: "done",
+    });
   }
 }

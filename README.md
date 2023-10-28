@@ -72,3 +72,10 @@ O fluxo de operação acontece da seguinte maneira:
 4. Multiplexa cada fragmento
 5. Faz upload dos fragmentos em formato webm (formato aberto e livre de royalties)
 6. Decoda cada fragmento com VideoDecoder
+
+## Tópicos da semana
+
+- Processamento em tempo real: ReadableStream, WritableStream, DuplexStream, TransformStream. PipeTo, PipeThrough.
+- WebWorker API, thread, onmessage
+- Mux, Demux, Encoder, Decoder
+- JSDocs
