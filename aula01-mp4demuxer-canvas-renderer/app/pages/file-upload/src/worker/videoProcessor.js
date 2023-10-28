@@ -1,13 +1,16 @@
 export default class VideoProcessor {
   #mp4Demuxer;
+  #webMWriter;
 
   /**
    *
    * @param {object} options
    * @param {import('./mp4Demuxer.js').default} options.mp4Demuxer
+   * @param {import('./../deps/webm-writer2.js').default} options.webMWriter
    */
-  constructor({ mp4Demuxer }) {
+  constructor({ mp4Demuxe, webMWriter }) {
     this.#mp4Demuxer = mp4Demuxer;
+    this.#webMWriter = webMWriter;
   }
 
   /** @returns {ReadableStream} */
@@ -151,6 +154,22 @@ export default class VideoProcessor {
     });
   }
 
+  transformIntoWebM() {
+    const writable = new WritableStream({
+      write: (chunk) => {
+        this.#webMWriter.addFrame(chunk);
+      },
+      close() {
+        debugger;
+      },
+    });
+
+    return {
+      readable: this.#webMWriter.getStream(),
+      writable,
+    };
+  }
+
   async start({ file, encoderConfig, renderFrame }) {
     const stream = file.stream();
     const fileName = file.name.split("/").pop().replace(".mp4", "");
@@ -158,6 +177,7 @@ export default class VideoProcessor {
     await this.mp4Decoder(stream)
       .pipeThrough(this.encode144p(encoderConfig)) // Readable e Transformable stream
       .pipeThrough(this.renderDecodedFramesAndGetEncodedChunks(renderFrame))
+      .pipeThrough(this.transformIntoWebM())
       .pipeTo(
         // readable stream
         new WritableStream({
