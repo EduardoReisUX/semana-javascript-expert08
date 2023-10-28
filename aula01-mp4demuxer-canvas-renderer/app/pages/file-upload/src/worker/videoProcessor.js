@@ -11,7 +11,7 @@ export default class VideoProcessor {
   }
 
   /** @returns {ReadableStream} */
-  mp4Decoder(encoderConfig, stream) {
+  mp4Decoder(stream) {
     return new ReadableStream({
       start: async (controller) => {
         const decoder = new VideoDecoder({
@@ -44,16 +44,84 @@ export default class VideoProcessor {
     });
   }
 
+  encode144p(encoderConfig) {
+    let _encoder;
+
+    const readable = new ReadableStream({
+      start: async (controller) => {
+        const { supported } = await VideoEncoder.isConfigSupported(
+          encoderConfig
+        );
+
+        if (!supported) {
+          console.error(
+            "encode144p VideoEncoder config not supported",
+            encoderConfig
+          );
+          controller.error("encode144p VideoEncoder config not supported");
+          controller.close();
+          return;
+        }
+
+        _encoder = new VideoEncoder({
+          /**
+           * 
+           * @param {EncodedVideoChunk} frame 
+           * @param {EncodedVideoChunkMetadata} config 
+           */
+
+          output: (frame, config) => {
+            if(config.decoderConfig) {
+              const decoderConfig = {
+                type: 'config',
+                config: config.decoderConfig
+              }
+              controller.enqueue(decoderConfig)
+            }
+
+            controller.enqueue(frame);
+          },
+
+          error: (err) => {
+            console.error("VideoEncoder 144p", err);
+            controller.error(err);
+          },
+        });
+
+        await _encoder.configure(encoderConfig);
+      },
+    });
+
+    const writable = new WritableStream({
+      async write(frame) {
+        _encoder.encode(frame);
+        frame.close();
+      },
+    });
+
+    // Duplex stream 
+    return {
+      readable,
+      writable,
+    };
+  }
+
+  renderDecodedFramesAndGetEncodedChunks(renderFrame) {
+
+  }
+
   async start({ file, encoderConfig, renderFrame }) {
     const stream = file.stream();
     const fileName = file.name.split("/").pop().replace(".mp4", "");
 
-    return this.mp4Decoder(encoderConfig, stream).pipeTo(
-      new WritableStream({
-        write(frame) {
-          renderFrame(frame);
-        },
-      })
-    );
+    return this.mp4Decoder(stream)
+      .pipeThrough(this.encode144p(encoderConfig)) // Duplex stream - Readable e Writable
+      .pipeTo(
+        new WritableStream({
+          write(frame) {
+            // renderFrame(frame);
+          },
+        })
+      );
   }
 }
