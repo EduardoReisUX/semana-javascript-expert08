@@ -171,6 +171,45 @@ export default class VideoProcessor {
     };
   }
 
+  /**
+   *
+   * @param {string} filename Nome do arquivo
+   * @param {'144p' | '360p' | '720p'} resolution Resolução do vídeo
+   * @param {'webm' | 'mp4'} type
+   */
+  upload(filename, resolution, type) {
+    const chunks = [];
+    let byteCount = 0;
+    const megaBytes = 10e6;
+
+    /** @param {Array} chunks */
+    const triggerUpload = async (chunks) => {
+      const blob = new Blob(chunks, {
+        type: "video/webm",
+      });
+
+      // remove todos os elementos
+      chunks.length = 0;
+      byteCount = 0;
+    };
+
+    return new WritableStream({
+      /** @param {{ data: Uint8Array }}  */
+      async write({ data }) {
+        chunks.push(data);
+        byteCount += data.byteLength;
+
+        if (byteCount <= megaBytes) return;
+
+        await triggerUpload(chunks);
+      },
+      async close() {
+        if (!chunks.length) return;
+        await triggerUpload(chunks);
+      },
+    });
+  }
+
   async start({ file, encoderConfig, renderFrame, sendMessage }) {
     const stream = file.stream();
 
@@ -196,14 +235,6 @@ export default class VideoProcessor {
           },
         })
       )
-      .pipeTo(
-        // readable stream
-        new WritableStream({
-          write(frame) {
-            debugger;
-            // renderFrame(frame);
-          },
-        })
-      );
+      .pipeTo(this.upload(fileName, "144p", "webm"));
   }
 }
