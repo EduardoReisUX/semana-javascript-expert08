@@ -27,7 +27,20 @@ export default class VideoProcessor {
 
         return this.#mp4Demuxer
           .run(stream, {
-            onConfig(config) {
+            async onConfig(config) {
+              const { supported } = await VideoDecoder.isConfigSupported(
+                config
+              );
+
+              if (!supported) {
+                console.error(
+                  "mp4Muxer VideoDecoder config not supported",
+                  config
+                );
+                controller.close();
+                return;
+              }
+
               decoder.configure(config);
             },
             /** @param {EncodedVideoChunk} chunk  */
@@ -65,18 +78,18 @@ export default class VideoProcessor {
 
         _encoder = new VideoEncoder({
           /**
-           * 
-           * @param {EncodedVideoChunk} frame 
-           * @param {EncodedVideoChunkMetadata} config 
+           *
+           * @param {EncodedVideoChunk} frame
+           * @param {EncodedVideoChunkMetadata} config
            */
 
           output: (frame, config) => {
-            if(config.decoderConfig) {
+            if (config.decoderConfig) {
               const decoderConfig = {
-                type: 'config',
-                config: config.decoderConfig
-              }
-              controller.enqueue(decoderConfig)
+                type: "config",
+                config: config.decoderConfig,
+              };
+              controller.enqueue(decoderConfig);
             }
 
             controller.enqueue(frame);
@@ -99,16 +112,14 @@ export default class VideoProcessor {
       },
     });
 
-    // Duplex stream 
+    // Duplex stream
     return {
       readable,
       writable,
     };
   }
 
-  renderDecodedFramesAndGetEncodedChunks(renderFrame) {
-
-  }
+  renderDecodedFramesAndGetEncodedChunks(renderFrame) {}
 
   async start({ file, encoderConfig, renderFrame }) {
     const stream = file.stream();
