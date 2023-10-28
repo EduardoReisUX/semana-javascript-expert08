@@ -1,5 +1,4 @@
 export default class View {
-  // #Método privado
   #fileUpload = document.getElementById("fileUpload");
   #btnUploadVideo = document.getElementById("btnUploadVideos");
   #fileSize = document.getElementById("fileSize");
@@ -7,11 +6,15 @@ export default class View {
   #txtfileName = document.getElementById("fileName");
   #fileUploadWrapper = document.getElementById("fileUploadWrapper");
   #elapsed = document.getElementById("elapsed");
-
+  /** @type {HTMLCanvasElement} */
   #canvas = document.getElementById("preview-144p");
 
   constructor() {
     this.configureBtnUploadClick();
+  }
+
+  getCanvas() {
+    return this.#canvas.transferControlToOffscreen();
   }
 
   parseBytesIntoMBAndGB(bytes) {
@@ -35,30 +38,19 @@ export default class View {
     return (e) => {
       const file = e.target.files[0];
       const { name, size } = file;
+      fn(file);
+
       this.#txtfileName.innerText = name;
       this.#fileSize.innerText = this.parseBytesIntoMBAndGB(size);
 
       this.#fileInfo.classList.remove("hide");
       this.#fileUploadWrapper.classList.add("hide");
-
-      fn(file);
-
-      clock.start((time) => {
-        took = time;
-        this.#elapsed.innerText = `Process started ${time}`;
-      });
-
-      setTimeout(() => {
-        clock.stop();
-        this.#elapsed.innerText = `Process took ${took.replace("ago", "")}`;
-      }, 5000);
     };
   }
 
   updateElapsedTime(text) {
     this.#elapsed.innerText = text;
   }
-
   configureOnFileChange(fn) {
     this.#fileUpload.addEventListener("change", this.onChange(fn));
   }

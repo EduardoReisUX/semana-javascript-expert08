@@ -1,6 +1,7 @@
 // https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers
 // Workers fazem o processamento numa thread paralela, sem interferir a interface do usuário.
 
+import CanvasRenderer from "./canvasRenderer.js";
 import MP4Demuxer from "./mp4Demuxer.js";
 import VideoProcessor from "./videoProcessor.js";
 
@@ -42,11 +43,14 @@ const mp4Demuxer = new MP4Demuxer();
 const videoProcessor = new VideoProcessor({ mp4Demuxer });
 
 onmessage = async ({ data }) => {
+  const renderFrame = CanvasRenderer.getRenderer(data.canvas);
   await videoProcessor.start({
     file: data.file,
+    renderFrame,
     encoderConfig,
-    sendMessage(message) {
-      self.postMessage(message);
-    },
+  });
+
+  self.postMessage({
+    status: "done",
   });
 };
