@@ -25,34 +25,31 @@ export default class VideoProcessor {
           },
         });
 
-        return this.#mp4Demuxer
-          .run(stream, {
-            async onConfig(config) {
-              const { supported } = await VideoDecoder.isConfigSupported(
+        return this.#mp4Demuxer.run(stream, {
+          async onConfig(config) {
+            const { supported } = await VideoDecoder.isConfigSupported(config);
+
+            if (!supported) {
+              console.error(
+                "mp4Muxer VideoDecoder config not supported",
                 config
               );
-
-              if (!supported) {
-                console.error(
-                  "mp4Muxer VideoDecoder config not supported",
-                  config
-                );
-                controller.close();
-                return;
-              }
-
-              decoder.configure(config);
-            },
-            /** @param {EncodedVideoChunk} chunk  */
-            onChunk(chunk) {
-              decoder.decode(chunk);
-            },
-          })
-          .then(() => {
-            setTimeout(() => {
               controller.close();
-            }, 1000);
-          });
+              return;
+            }
+
+            decoder.configure(config);
+          },
+          /** @param {EncodedVideoChunk} chunk  */
+          onChunk(chunk) {
+            decoder.decode(chunk);
+          },
+        });
+        // .then(() => {
+        //   setTimeout(() => {
+        //     controller.close();
+        //   }, 1000);
+        // });
       },
     });
   }
@@ -119,17 +116,53 @@ export default class VideoProcessor {
     };
   }
 
-  renderDecodedFramesAndGetEncodedChunks(renderFrame) {}
+  renderDecodedFramesAndGetEncodedChunks(renderFrame) {
+    let _decoder;
+
+    return new TransformStream({
+      start: (controller) => {
+        _decoder = new VideoDecoder({
+          output(frame) {
+            renderFrame(frame);
+          },
+          error(e) {
+            console.error("error at renderFrames", e);
+            controller.error(e);
+          },
+        });
+      },
+
+      /**
+       *
+       * @param {EncodedVideoChunk} encodedChunk
+       * @param {TransformStreamDefaultController} controleer
+       */
+      async transform(encodedChunk, controleer) {
+        if (encodedChunk.type === "config") {
+          await _decoder.configure(encodedChunk.config);
+          return;
+        }
+
+        _decoder.decode(encodedChunk);
+
+        // need the encoded version to use webM
+        controleer.enqueue(encodedChunk);
+      },
+    });
+  }
 
   async start({ file, encoderConfig, renderFrame }) {
     const stream = file.stream();
     const fileName = file.name.split("/").pop().replace(".mp4", "");
 
-    return this.mp4Decoder(stream)
-      .pipeThrough(this.encode144p(encoderConfig)) // Duplex stream - Readable e Writable
+    await this.mp4Decoder(stream)
+      .pipeThrough(this.encode144p(encoderConfig)) // Readable e Transformable stream
+      .pipeThrough(this.renderDecodedFramesAndGetEncodedChunks(renderFrame))
       .pipeTo(
+        // readable stream
         new WritableStream({
           write(frame) {
+            debugger;
             // renderFrame(frame);
           },
         })
