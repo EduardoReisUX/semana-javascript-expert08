@@ -59,9 +59,12 @@ onmessage = async ({ data }) => {
     file: data.file,
     renderFrame,
     encoderConfig,
+    sendMessage: (message) => {
+      self.postMessage(message);
+    },
   });
 
-  self.postMessage({
-    status: "done",
-  });
+  // self.postMessage({
+  //   status: "done",
+  // });
 };
